@@ -1,0 +1,153 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+#Diabetes Prediction 
+#Read data from our directory
+```{r}
+
+data = read.csv(file.choose(),header = TRUE)
+head(data)
+
+```
+
+# find the summary of the data
+```{r}
+summary(data)
+```
+
+# find the structure of the data
+```{r}
+str(data)
+data$Outcome=as.factor(data$Outcome)
+str(data)
+```
+
+# find missing values 
+
+```{r}
+sapply(data, function(x) sum(is.na(x)))
+```
+
+# missing data through graphically 
+
+```{r}
+library(visdat)
+vis_dat(data)
+vis_miss(data)
+```
+
+ vis_dat:- visualises the whole dataframe at once, and provides information about the class of the data input into R, as well as whether the data is missing or not.
+
+vis_miss :- The function vis_miss provides a summary of whether the data is missing or not. It also provides the amount of missings in each columns.
+
+ we know that there is  no missing data in dataset 
+
+ now we will se how man people are diabetic 
+
+
+```{r}
+library(ggplot2)
+ggplot(data, aes(Outcome)) +geom_bar(fill = "tomato3")
+table(data$Outcome)
+```
+
+
+0 indicates not Diabetic
+1 indicates theyy are diabetic
+
+#How varibles are distributed 
+
+```{r}
+par(mfrow = c(3, 2))
+  p = density(data$Pregnancies)
+  plot(p , main="density of Pregnancies")
+  
+   g = density(data$Glucose)
+   plot(g , main="density of Glucose")
+   
+   bp= density(data$BloodPressure)
+   plot(bp , main="density of Blood pressure ")
+   
+   s = density(data$SkinThickness)
+   plot(s, main="density of skin thickness")
+   
+   i = density(data$Insulin)
+   plot(i , main="density of Insulin")
+   
+   bm= density(data$BMI)
+   plot(bm , main="density of BMI")
+   
+   dp = density(data$DiabetesPedigreeFunction)
+   plot(dp , main=" density DiabetesPedigreeFunction")
+   
+   a= density(data$Age)
+   plot(a , main="density of Age")
+   
+
+  
+```
+
+The graphs show some of the distributions of the variables. Age and number of times pregnant are not normal distributions as expected since the underlying population should not be normally distributed either. 
+
+On the other hand, the glucose level and BMI seem to follow a normal distribution. When performing any analysis, it is always good to know what is the distribution of the data so all the assumptions for different tests or models can be met.
+
+# Let's see the correlation between numerical variables
+
+varibles must be the numeric therefore convert them as numeric 
+
+```{r} 
+
+data$Pregnancies=as.numeric(data$Pregnancies)
+data$Glucose=as.numeric(data$Glucose)
+data$BloodPressure=as.numeric(data$BloodPressure)
+data$SkinThickness=as.numeric(data$SkinThickness) 
+data$Insulin=as.numeric(data$Insulin)
+data$Age=as.numeric(data$Age)
+data$Outcome=as.numeric(data$Outcome)
+
+library(corrplot)
+c <- cor(data)
+corrplot(c, method="number")
+
+data$Outcome=as.numeric(data$Outcome)
+
+```
+more corelated elements should be eliminated and not be considered
+
+ divide the dataset into two parts testing and training
+```{r}
+library(caTools)
+set.seed(123)
+s= sample.split(data,SplitRatio = 0.7)
+train =subset(data,s==TRUE)
+test=subset(data,s==FALSE)
+
+```
+ 
+# Modeling - Decission Tree
+ 
+```{r}
+library(rpart)
+model = rpart(Outcome~.,data = train,method = "class")
+#visualise the model
+plot(model)
+text(model, pretty = 0)
+```
+
+#Testing
+```{r}
+library(caret)
+p <- predict(model, newdata = test[,-9], type = "class" )
+
+confusionMatrix(
+  factor(p, levels = 1:2),
+  factor(test$Outcome, levels = 1:2)
+)
+
+```
+# our accuracy is 75 %
+
+
